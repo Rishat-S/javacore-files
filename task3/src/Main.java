@@ -18,27 +18,11 @@ public class Main {
 
         gameProgressList = openProgress(pathSaveGameFiles);
 
+        deleteFilesDat(pathSaveGameFiles);
+
         for (GameProgress gameProgress : gameProgressList) {
             System.out.println(gameProgress);
         }
-
-    }
-
-    private static List<GameProgress> openProgress(List<String> pathSaveGameFiles) {
-        List<GameProgress> gameProgressList = new ArrayList<>();
-        for (String pathSaveGameFile : pathSaveGameFiles) {
-            try (FileInputStream fileInputStream = new FileInputStream(pathSaveGameFile);
-                 ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
-                gameProgressList.add((GameProgress) objectInputStream.readObject());
-
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-        }
-
-        deleteFilesDat(pathSaveGameFiles);
-
-        return gameProgressList;
     }
 
     private static List<String> openZip(String rootPath) {
@@ -50,17 +34,32 @@ public class Main {
             while ((entry = zipInputStream.getNextEntry()) != null) {
                 name = entry.getName();
                 result.add(name);
-                FileOutputStream fileOutputStream = new FileOutputStream(name);
-                for (int i = zipInputStream.read(); i != -1; i = zipInputStream.read()) {
-                    fileOutputStream.write(i);
+                try (FileOutputStream fileOutputStream = new FileOutputStream(name)) {
+                    for (int i = zipInputStream.read(); i != -1; i = zipInputStream.read()) {
+                        fileOutputStream.write(i);
+                    }
+                    fileOutputStream.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                fileOutputStream.flush();
-                fileOutputStream.close();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
         return result;
+    }
+
+    private static List<GameProgress> openProgress(List<String> pathSaveGameFiles) {
+        List<GameProgress> gameProgressList = new ArrayList<>();
+        for (String pathSaveGameFile : pathSaveGameFiles) {
+            try (FileInputStream fileInputStream = new FileInputStream(pathSaveGameFile);
+                 ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
+                gameProgressList.add((GameProgress) objectInputStream.readObject());
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+        return gameProgressList;
     }
 
     private static void deleteFilesDat(List<String> pathSaveGameFiles) {

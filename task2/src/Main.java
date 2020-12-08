@@ -23,23 +23,16 @@ public class Main {
 
     }
 
-    private static void zipFiles(String pathToFile, List<String> pathSaveGameFiles) {
-        try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(pathToFile))) {
-            for (String pathSaveGameFile : pathSaveGameFiles) {
-                FileInputStream fis = new FileInputStream(pathSaveGameFile);
-                ZipEntry entry = new ZipEntry(pathSaveGameFile);
-                zipOut.putNextEntry(entry);
-                byte[] buffer = new byte[fis.available()];
-                fis.read(buffer);
-                zipOut.write(buffer);
-                zipOut.closeEntry();
-                fis.close();
-            }
-
-            deleteFilesDat(pathSaveGameFiles);
-
-        } catch (IOException e) {
-            e.printStackTrace();
+    private static void createGameProgressList(Random random, List<GameProgress> gameProgressList) {
+        for (int i = 0; i < 3; i++) {
+            gameProgressList.add(
+                    new GameProgress(
+                            random.nextInt(90) + 10,
+                            random.nextInt(5) + 1,
+                            random.nextInt(10) + 1,
+                            (i + 1) * random.nextDouble()
+                    )
+            );
         }
     }
 
@@ -53,12 +46,9 @@ public class Main {
                 e.printStackTrace();
             }
 
-            try {
-                FileOutputStream fos = new FileOutputStream(file);
-                ObjectOutputStream oos = new ObjectOutputStream(fos);
+            try (FileOutputStream fos = new FileOutputStream(file);
+                 ObjectOutputStream oos = new ObjectOutputStream(fos)) {
                 oos.writeObject(gameProgressList.get(i));
-                fos.close();
-                oos.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -68,16 +58,25 @@ public class Main {
         return result;
     }
 
-    private static void createGameProgressList(Random random, List<GameProgress> gameProgressList) {
-        for (int i = 0; i < 3; i++) {
-            gameProgressList.add(
-                    new GameProgress(
-                            random.nextInt(90) + 10,
-                            random.nextInt(5) + 1,
-                            random.nextInt(10) + 1,
-                            (i + 1) * random.nextDouble()
-                    )
-            );
+    private static void zipFiles(String pathToFile, List<String> pathSaveGameFiles) {
+        try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(pathToFile))) {
+            for (String pathSaveGameFile : pathSaveGameFiles) {
+                try (FileInputStream fis = new FileInputStream(pathSaveGameFile)){
+                    ZipEntry entry = new ZipEntry(pathSaveGameFile);
+                    zipOut.putNextEntry(entry);
+                    byte[] buffer = new byte[fis.available()];
+                    fis.read(buffer);
+                    zipOut.write(buffer);
+                    zipOut.closeEntry();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            deleteFilesDat(pathSaveGameFiles);
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
